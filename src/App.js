@@ -1,25 +1,62 @@
-import logo from './logo.svg';
-import './App.css';
+import React, { useState, useEffect } from 'react';
+import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
+import { login, register, getBookmarks, addBookmark, deleteBookmark } from './services/makeRequest';
+import Dashboard from './components/DashBoard';
+import LoginForm from './components/LoginForm';
 
-function App() {
+const App = () => {
+  const [token, setToken] = useState(localStorage.getItem('token'));
+  const [bookmarks, setBookmarks] = useState([]);
+  const [newUrl, setNewUrl] = useState('');
+
+  useEffect(() => {
+    if (token) {
+      getBookmarks(token).then(setBookmarks);
+    }
+  }, [token]);
+
+  const handleLogin = (email, password) => {
+    login(email, password).then((data) => {
+      localStorage.setItem('token', data.token);
+      setToken(data.token);
+    });
+  };
+
+  const handleRegister = (email, password) => {
+    register(email, password).then((data) => {
+      localStorage.setItem('token', data.token);
+      setToken(data.token);
+    });
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    setToken(null);
+  };
+
+  if (!token) {
+    return (
+      <Router>
+        <Routes>
+          <Route path="/" element={<LoginForm handleLogin={handleLogin} />} />
+          <Route path="/register" element={<LoginForm handleRegister={handleRegister} />} />
+          <Route path="*" element={<Navigate to="/" />} />
+        </Routes>
+      </Router>
+    );
+  }
+
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
+    <Router>
+      <Routes>
+        <Route
+          path="/dashboard"
+          element={<Dashboard bookmarks={bookmarks} setBookmarks={setBookmarks} token={token} />}
+        />
+        <Route path="*" element={<Navigate to="/dashboard" />} />
+      </Routes>
+    </Router>
   );
-}
+};
 
 export default App;
